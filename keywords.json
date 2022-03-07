@@ -1,0 +1,6 @@
+{
+    "BTC": ["Bitcoin"],
+    "ETH": ["Ethereum"],
+    "SHIB": ["Shiba Inu", "Shiba"],
+    "DOGE": ["Dogecoin", "Doge"]
+}
