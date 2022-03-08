@@ -32,6 +32,8 @@ class FeedScraper:
             columns.append('id')
             columns.append('title')
             columns.append('published')
+            columns.append('author')
+            columns.append('link')
             self.df = pd.DataFrame(columns=columns)
     
     def _initFeeds(self, path):
@@ -94,6 +96,10 @@ class FeedScraper:
                 data['id'] = [entry.id]
                 data['title'] = [entry.title]
                 data['published'] = [pd.Timestamp(time.mktime(entry.published_parsed), unit='s')]
+                if 'author' in entry:
+                    data['author'] = [entry.author]
+                if 'link' in entry:
+                    data['link'] = [entry.link]
 
                 sentiment = self.sia.polarity_scores(entry.title)['compound']
 
