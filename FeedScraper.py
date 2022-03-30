@@ -68,18 +68,22 @@ class FeedScraper:
             return False
 
     def _fetchAndProcessFeed(self, feed):
-        d = feedparser.parse(feed.url, etag=feed.etag, modified=feed.modified)
+        try:
+            d = feedparser.parse(feed.url, etag=feed.etag, modified=feed.modified)
 
-        if 'etag' in d:
-            feed.etag = d.etag
-        if 'modified' in d:
-            feed.modified = d.modified
-        if 'entries' in d:
-            logging.info("Fetched feed from url '{}' with {} entries.".format(feed.url, len(d.entries)))
-            logging.debug("Server returned ETag: '{}', Modified: '{}'".format(feed.etag, feed.modified))
+            if 'etag' in d:
+                feed.etag = d.etag
+            if 'modified' in d:
+                feed.modified = d.modified
+            if 'entries' in d:
+                logging.info("Fetched feed from url '{}' with {} entries.".format(feed.url, len(d.entries)))
+                logging.debug("Server returned ETag: '{}', Modified: '{}'".format(feed.etag, feed.modified))
 
-            for entry in d.entries:
-                self._processFeedEntry(feed, entry)
+                for entry in d.entries:
+                    self._processFeedEntry(feed, entry)
+
+        except:
+            logging.exception("Failed to get the feeds from '{}'".format(feed.url))
     
     def _processFeedEntry(self, feed, entry):
         if 'title' not in entry:
