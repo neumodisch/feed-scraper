@@ -81,7 +81,6 @@ class FeedScraper:
 
                 for entry in d.entries:
                     self._processFeedEntry(feed, entry)
-
         except:
             logging.exception("Failed to get the feeds from '{}'".format(feed.url))
     
@@ -134,9 +133,35 @@ class FeedScraper:
             if found:
                 keywords_found.append(keyword)
         return keywords_found
+
+    def _calc_interval(self, interval):
+        if interval is None:
+            return None
+        else:
+            if type(interval) is int:
+                logging.info(f"Interval given as integer: '{interval}'")
+                return interval
+            elif type(interval) is str:
+                logging.info(f"Interval given as string: '{interval}'")
+                valid_units = ['s', 'm', 'h', 'd']
+                conversions = [1, 60, 3600, 86400]
+                unit = interval[-1]
+                if unit not in valid_units:
+                    raise ValueError(f"Invalid unit for interval given: '{unit}', valid units are: {valid_units}")
+                value_str = interval[0:-1]
+                try:
+                    value = int(value_str)
+                    value *= conversions[valid_units.index(unit)]
+                except ValueError:
+                    raise ValueError(f"Invalid integer value for interval given: '{value_str}'")
+                logging.info(f"Interval of {value}s will be used for scraping")
+                return value
     
-    def scrape(self, interval):
+    def scrape(self, interval=None):
+        interval = self._calc_interval(interval)
+
         while True:
+            last_scape_start = time.time()
             for feed in self.feeds:
                 self._fetchAndProcessFeed(feed)
                 if self.update_db:
@@ -145,14 +170,15 @@ class FeedScraper:
                     logging.debug("Database file '{}' updated".format(self.db_path))
                     self.update_db = False
 
-            if interval >= 0:
-                time_delay = interval
-                next_update = time.localtime(time.time() + time_delay)
-                logging.info("Sleep until {:02d}:{:02d} for next update of feeds".format(next_update.tm_hour, next_update.tm_min))
-                time.sleep(time_delay)
-            else:
+            if interval is None:
                 break
-    
+            else:
+                # Calculate start of next scrape
+                time_delay = max(0, interval - (time.time() - last_scape_start))
+                next_update = time.localtime(time.time() + time_delay)
+                logging.info("Sleep until {:02d}:{:02d}:{:02d} for next update of feeds".format(next_update.tm_hour, next_update.tm_min, next_update.tm_sec))
+                time.sleep(time_delay)
+
     class Feed:
         def __init__(self, url):
             self.url = url
@@ -161,4 +187,4 @@ class FeedScraper:
 
 if __name__ == '__main__':
     scraper = FeedScraper('db.pkl', 'feeds.txt', 'keywords.json')
-    scraper.scrape(600)
+    scraper.scrape('10m')
