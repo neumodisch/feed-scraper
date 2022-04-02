@@ -81,7 +81,7 @@ class FeedScraper:
 
                 for entry in d.entries:
                     self._processFeedEntry(feed, entry)
-        except:
+        except Exception:
             logging.exception("Failed to get the feeds from '{}'".format(feed.url))
     
     def _processFeedEntry(self, feed, entry):
