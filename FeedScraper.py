@@ -146,7 +146,7 @@ class FeedScraper:
                     self.update_db = False
 
             if interval >= 0:
-                time_delay = 60 * interval
+                time_delay = interval
                 next_update = time.localtime(time.time() + time_delay)
                 logging.info("Sleep until {:02d}:{:02d} for next update of feeds".format(next_update.tm_hour, next_update.tm_min))
                 time.sleep(time_delay)
@@ -161,4 +161,4 @@ class FeedScraper:
 
 if __name__ == '__main__':
     scraper = FeedScraper('db.pkl', 'feeds.txt', 'keywords.json')
-    scraper.scrape(10)
+    scraper.scrape(600)
