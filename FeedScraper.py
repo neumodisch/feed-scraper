@@ -17,7 +17,7 @@ class FeedScraper:
         nltk.download('vader_lexicon')
         self.sia = SentimentIntensityAnalyzer()
         self.update_db = False
-    
+
     def _initLogging(self):
         format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         logging.basicConfig(format=format, level=logging.INFO)
@@ -36,7 +36,7 @@ class FeedScraper:
             columns.append('author')
             columns.append('link')
             self.df = pd.DataFrame(columns=columns)
-    
+
     def _initFeeds(self, path):
         self.feeds = []
         try:
@@ -49,7 +49,7 @@ class FeedScraper:
                 logging.info("Read feeds from '{}' with {} entries".format(path, len(self.feeds)))
         except EnvironmentError as e:
             logging.error(e)
-    
+
     def _initKeywords(self, path):
         self.keywords = {}
         try:
@@ -60,7 +60,7 @@ class FeedScraper:
             logging.error("JSON decoder errer when parsing file '{}': {}".format(path, e))
         except EnvironmentError as e:
             logging.error(e)
-    
+
     def _isKeywordInSenctence(self, sentence, keyword):
         match = re.search(fr"\b{keyword}\b", sentence, re.IGNORECASE | re.MULTILINE)
         if match != None:
@@ -98,7 +98,7 @@ class FeedScraper:
                         self._processFeedEntry(feed, entry)
         except Exception as e:
             logging.error("Failed to get the feeds from '{}': {}".format(feed.url, e))
-    
+
     def _processFeedEntry(self, feed, entry):
         if 'title' not in entry:
             logging.error("Failed to add entry due to missing key 'title'")
@@ -124,7 +124,7 @@ class FeedScraper:
                 keywords_found = self._findCoinsInSentence(entry.title)
                 for keyword in keywords_found:
                     data[keyword] = [sentiment]
-                
+
                 df_new = pd.DataFrame(data)
                 self.df = pd.concat([self.df, df_new], ignore_index=True)
 
@@ -133,7 +133,7 @@ class FeedScraper:
                 logging.info("New entry added to database: '{}', '{}', '{}', '{}', '{}'".format(feed.url, entry.title, entry.published, keywords_found, sentiment))
             else:
                 logging.debug("Entry already in database: '{}', '{}', '{}'".format(feed.url, entry.title, entry.published))
-    
+
     def _findCoinsInSentence(self, sentence):
         keywords_found = []
         for keyword in self.keywords:
@@ -171,7 +171,7 @@ class FeedScraper:
                     raise ValueError(f"Invalid integer value for interval given: '{value_str}'")
                 logging.info(f"Interval of {value}s will be used for scraping")
                 return value
-    
+
     def scrape(self, interval=None):
         interval = self._calc_interval(interval)
 
