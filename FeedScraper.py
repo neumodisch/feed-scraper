@@ -70,7 +70,7 @@ class FeedScraper:
 
     def _fetchAndProcessFeed(self, feed):
         try:
-            headers = {}
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
             if len(feed.etag):
                 headers["ETag"] = feed.etag
             if len(feed.modified):
