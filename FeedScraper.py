@@ -1,4 +1,5 @@
 import logging, time, os, re, json
+import requests
 import feedparser
 import pandas as pd
 import nltk
@@ -69,20 +70,34 @@ class FeedScraper:
 
     def _fetchAndProcessFeed(self, feed):
         try:
-            d = feedparser.parse(feed.url, etag=feed.etag, modified=feed.modified)
+            headers = {}
+            if len(feed.etag):
+                headers["ETag"] = feed.etag
+            if len(feed.modified):
+                headers["If-Modified-Since"] = feed.modified
+            logging.debug("Request headers: '{}'".format(headers))
 
-            if 'etag' in d:
-                feed.etag = d.etag
-            if 'modified' in d:
-                feed.modified = d.modified
-            if 'entries' in d:
+            r = requests.get(feed.url, headers=headers, timeout=10)
+
+            if "etag" in r.headers:
+                feed.etag = r.headers["etag"]
+                logging.debug("Server returned etag: '{}'".format(feed.etag))
+            if "last-modified" in r.headers:
+                feed.modified = r.headers["last-modified"]
+                logging.debug("Server returned last-modified: '{}'".format(feed.modified))
+
+            if r.status_code == 304:
+                logging.info(f"Request to {feed.url} returned status code {r.status_code} Not Modified")
+            elif r.status_code != 200:
+                logging.error(f"Request to {feed.url} returned status code {r.status_code}")
+            else:
+                d = feedparser.parse(r.content)
                 logging.info("Fetched feed from url '{}' with {} entries.".format(feed.url, len(d.entries)))
-                logging.debug("Server returned ETag: '{}', Modified: '{}'".format(feed.etag, feed.modified))
-
-                for entry in d.entries:
-                    self._processFeedEntry(feed, entry)
-        except Exception:
-            logging.exception("Failed to get the feeds from '{}'".format(feed.url))
+                if 'entries' in d:
+                    for entry in d.entries:
+                        self._processFeedEntry(feed, entry)
+        except Exception as e:
+            logging.error("Failed to get the feeds from '{}': {}".format(feed.url, e))
     
     def _processFeedEntry(self, feed, entry):
         if 'title' not in entry:
